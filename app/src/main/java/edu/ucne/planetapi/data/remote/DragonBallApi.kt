@@ -1,7 +1,8 @@
 package edu.ucne.planetapi.data.remote
 
 import edu.ucne.planetapi.data.remote.dto.PlanetDto
-import edu.ucne.planetapi.data.remote.dto.PlanetsResponse
+import edu.ucne.planetapi.data.remote.dto.PlanetResponseDto
+import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -10,11 +11,13 @@ interface DragonBallApi {
 
     @GET("planets")
     suspend fun getPlanets(
-        @Query("limit") limit: Int = 20
-    ): PlanetsResponse
+        @Query("page") page: Int,
+        @Query("limit") limit: Int,
+        @Query("name") name: String?
+    ): Response<PlanetResponseDto>
 
     @GET("planets/{id}")
-    suspend fun getPlanetById(
+    suspend fun getPlanetDetail(
         @Path("id") id: Int
-    ): PlanetDto
+    ): Response<PlanetDto>
 }

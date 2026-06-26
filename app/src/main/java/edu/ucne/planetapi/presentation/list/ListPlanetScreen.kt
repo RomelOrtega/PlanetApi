@@ -8,32 +8,33 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import edu.ucne.planetapi.domain.model.Planet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListPlanetScreen(
-    goToPlanet: (Int) -> Unit,
-    viewModel: ListPlanetViewModel = hiltViewModel()
+    viewModel: ListPlanetViewModel = hiltViewModel(),
+    onPlanetClick: (Int) -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    ListBodyScreen(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onPlanetClick = onPlanetClick
+    )
+}
 
-    val planetasFiltrados = remember(state.planets, state.filtro) {
-        if (state.filtro.isBlank()) {
-            state.planets
-        } else {
-            state.planets.filter {
-                it.name.contains(state.filtro, ignoreCase = true)
-            }
-        }
-    }
-
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ListBodyScreen(
+    state: ListPlanetUiState,
+    onEvent: (ListPlanetUiEvent) -> Unit,
+    onPlanetClick: (Int) -> Unit
+) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -41,92 +42,91 @@ fun ListPlanetScreen(
             )
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            when {
-                state.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
+            FilterSection(
+                name = state.filterName,
+                onEvent = onEvent
+            )
+
+            if (state.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+
+            LazyColumn(
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                items(state.planets) { planet ->
+                    PlanetItem(
+                        planet = planet,
+                        onClick = { onPlanetClick(planet.id) }
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
-                state.error != null -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Error: ${state.error}", color = Color.Red)
-                        Spacer(Modifier.height(8.dp))
-                        Button(onClick = { viewModel.load() }) {
-                            Text("Reintentar")
-                        }
-                    }
-                }
-                else -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = state.filtro,
-                            onValueChange = { viewModel.onFiltroChanged(it) },
-                            label = { Text("Buscar planeta...") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
+            }
+        }
+    }
+}
 
-                        Spacer(Modifier.height(8.dp))
+@Composable
+fun FilterSection(
+    name: String,
+    onEvent: (ListPlanetUiEvent) -> Unit
+) {
+    ElevatedCard(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { onEvent(ListPlanetUiEvent.UpdateFilters(it)) },
+                label = { Text("Nombre:") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                        Text(
-                            "Mostrando ${planetasFiltrados.size} de ${state.planets.size} planetas",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
+            Button(
+                onClick = { onEvent(ListPlanetUiEvent.Search) },
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Buscar")
+            }
+        }
+    }
+}
 
-                        Spacer(Modifier.height(8.dp))
-
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(planetasFiltrados) { planet ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 6.dp)
-                                        .clickable { goToPlanet(planet.id) }
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        AsyncImage(
-                                            model = planet.image,
-                                            contentDescription = planet.name,
-                                            modifier = Modifier.size(80.dp),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                        Spacer(Modifier.width(12.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                planet.name,
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                if (planet.isDestroyed) "Destruido" else "Existe",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = if (planet.isDestroyed) Color.Red else Color.Green
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+@Composable
+fun PlanetItem(
+    planet: Planet,
+    onClick: () -> Unit
+) {
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = planet.image,
+                contentDescription = planet.name,
+                modifier = Modifier.size(64.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(planet.name)
+                Text(if (planet.isDestroyed) "Destruido" else "Existe")
             }
         }
     }

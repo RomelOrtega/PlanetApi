@@ -4,28 +4,26 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
-import edu.ucne.planetapi.presentation.list.ListPlanetScreen
 import edu.ucne.planetapi.presentation.details.PlanetDetailScreen
+import edu.ucne.planetapi.presentation.list.ListPlanetScreen
 
 @Composable
 fun PlanetNavHost(navHostController: NavHostController) {
     NavHost(
         navController = navHostController,
-        startDestination = Screen.PlanetList
+        startDestination = Screen.List
     ) {
-        composable<Screen.PlanetList> {
+        composable<Screen.List> {
             ListPlanetScreen(
-                goToPlanet = { id ->
-                    navHostController.navigate(Screen.PlanetDetail(id))
+                onPlanetClick = { id ->
+                    navHostController.navigate(Screen.Detail(id))
                 }
             )
         }
-        composable<Screen.PlanetDetail> {
-            val args = it.toRoute<Screen.PlanetDetail>()
+
+        composable<Screen.Detail> {
             PlanetDetailScreen(
-                planetId = args.planetId,
-                onNavigateBack = { navHostController.navigateUp() }
+                onBack = { navHostController.navigateUp() }
             )
         }
     }
