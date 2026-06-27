@@ -10,6 +10,9 @@ import edu.ucne.planetapi.data.remote.DragonBallApi
 import edu.ucne.planetapi.data.remote.PlanetRemoteDataSource
 import edu.ucne.planetapi.data.repository.PlanetRepositoryImpl
 import edu.ucne.planetapi.domain.repository.PlanetRepository
+import edu.ucne.planetapi.domain.repository.CharacterRepository
+import edu.ucne.planetapi.data.repository.CharacterRepositoryImpl
+import edu.ucne.planetapi.data.remote.CharacterRemoteDataSource
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import javax.inject.Singleton
@@ -41,5 +44,11 @@ object AppModule {
     @Singleton
     fun provideRepository(remoteDataSource: PlanetRemoteDataSource): PlanetRepository {
         return PlanetRepositoryImpl(remoteDataSource)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCharacterRepository(remoteDataSource: CharacterRemoteDataSource): CharacterRepository {
+        return CharacterRepositoryImpl(remoteDataSource)
     }
 }
